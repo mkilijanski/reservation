@@ -7,6 +7,7 @@ import com.hsbc.restaurant.domain.booking.controller.BookingController;
 import com.hsbc.restaurant.domain.booking.handler.BookingCreatorHandler;
 import com.hsbc.restaurant.domain.booking.handler.BookingFetchHandler;
 import com.hsbc.restaurant.domain.booking.service.BookingRepository;
+import com.hsbc.restaurant.domain.booking.service.DateTimeHelper;
 import com.hsbc.restaurant.domain.booking.service.impl.BookingRepositoryImpl;
 import io.muserver.*;
 import io.muserver.rest.RestHandlerBuilder;
@@ -32,7 +33,7 @@ public class RestaurantConfiguration {
 //                .addHandler(new AuthHandler())
                 .addHandler(RestHandlerBuilder.restHandler(
                                 new BookingController(new BookingFetchHandler(bookingRepository),
-                                        new BookingCreatorHandler(bookingRepository)))
+                                        new BookingCreatorHandler(bookingRepository, new DateTimeHelper())))
                         .addRequestFilter(RestaurantConfiguration::filterIfRequestIsAllowed)
                         .addCustomWriter(new JacksonJaxbJsonProvider(objectMapper, DEFAULT_ANNOTATIONS))
                         .addCustomReader(new JacksonJaxbJsonProvider(objectMapper, DEFAULT_ANNOTATIONS))

@@ -3,6 +3,7 @@ package com.hsbc.restaurant.domain.booking.handler;
 import com.hsbc.restaurant.domain.booking.dto.BookingCreateRequest;
 import com.hsbc.restaurant.domain.booking.handler.BookingCreatorHandler;
 import com.hsbc.restaurant.domain.booking.service.BookingRepository;
+import com.hsbc.restaurant.domain.booking.service.DateTimeHelper;
 import com.hsbc.restaurant.domain.booking.service.entity.BookingEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,11 +26,14 @@ class BookingCreatorHandlerTest {
 
     @Mock
     private BookingRepository bookingRepository;
+    @Mock
+    private DateTimeHelper dateTimeHelper;
 
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        bookingCreatorHandler = new BookingCreatorHandler(bookingRepository);
+        when(dateTimeHelper.getCurrentDateTime()).thenReturn(LocalDateTime.of(2023, 7, 16, 12, 0));
+        bookingCreatorHandler = new BookingCreatorHandler(bookingRepository, dateTimeHelper);
     }
 
     @Test
@@ -50,11 +54,10 @@ class BookingCreatorHandlerTest {
         assertThat(response.getBookingId()).isEqualTo(uuid);
         verify(bookingRepository).add(bookingCreateRequest.getCustomerName(), bookingCreateRequest.getTableSize(), bookingCreateRequest.getStartReservation());
     }
-
     @Test
-    public void create_BookingStartTimeBeforeValidRange_ThrowsRuntimeException() {
+    public void create_BookingStartTimeBeforeValidDate_ThrowsRuntimeException() {
         // given
-        var bookingCreateRequest = new BookingCreateRequest("Customer 1", 4, LocalDateTime.of(2023, 7, 16, 12, 0));
+        var bookingCreateRequest = new BookingCreateRequest("Customer 1", 4, LocalDateTime.of(2023, 7, 17, 12, 0));
 
         // when
         assertThatExceptionOfType(RuntimeException.class)
@@ -63,9 +66,20 @@ class BookingCreatorHandlerTest {
     }
 
     @Test
+    public void create_BookingStartTimeBeforeValidRange_ThrowsRuntimeException() {
+        // given
+        var bookingCreateRequest = new BookingCreateRequest("Customer 1", 4, LocalDateTime.of(2023, 7, 15, 16, 0));
+
+        // when
+        assertThatExceptionOfType(RuntimeException.class)
+                .isThrownBy(() -> bookingCreatorHandler.create(bookingCreateRequest))
+                .withMessage("It is not possible to make a reservation in the past!");
+    }
+
+    @Test
     public void create_BookingStartTimeAfterValidRange_ThrowsRuntimeException() {
         // given
-        var bookingCreateRequest = new BookingCreateRequest("Customer 1", 4, LocalDateTime.of(2023, 7, 16, 23, 0));
+        var bookingCreateRequest = new BookingCreateRequest("Customer 1", 4, LocalDateTime.of(2023, 7, 17, 23, 0));
 
         // when
         assertThatExceptionOfType(RuntimeException.class)
